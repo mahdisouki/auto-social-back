@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon -r tsconfig-paths/register src/server.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "test": "jest"
   },
   "keywords": [
