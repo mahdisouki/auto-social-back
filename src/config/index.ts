@@ -7,7 +7,7 @@ interface Config {
   server: {
     port: number;
     nodeEnv: string;
-    corsOrigin: string;
+    corsOrigin: string | string[];
   };
   database: {
     mongoUri: string | undefined;
@@ -38,7 +38,9 @@ export const config: Config = {
   server: {
     port: parseInt(process.env.PORT || '4000', 10),
     nodeEnv: process.env.NODE_ENV || 'development',
-    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    corsOrigin: process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+      : [],
   },
   database: {
     mongoUri: process.env.MONGO_URI,
