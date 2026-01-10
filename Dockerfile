@@ -21,6 +21,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Accept CORS_ORIGIN as build argument
+ARG CORS_ORIGIN
+# Set it as environment variable
+ENV CORS_ORIGIN=${CORS_ORIGIN}
+
 # Copy package files
 COPY package*.json ./
 
