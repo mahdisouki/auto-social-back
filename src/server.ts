@@ -65,8 +65,8 @@ class AutoSocialServer {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-    // Static files
-    this.app.use('/uploads', express.static('uploads'));
+    // Static files (commented out - using Cloudinary for image storage)
+    // this.app.use('/uploads', express.static('uploads'));
   }
 
   private initializeRoutes(): void {

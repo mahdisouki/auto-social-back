@@ -30,8 +30,8 @@ RUN npm ci --only=production
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Create uploads directory
-RUN mkdir -p uploads/posts
+# Create uploads directory (optional - using Cloudinary for image storage)
+# RUN mkdir -p uploads/posts
 
 # Expose port
 EXPOSE 3000

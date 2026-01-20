@@ -32,7 +32,7 @@ services:
       PORT: 3000
       MONGODB_URI: mongodb://admin:adminpassword@mongodb:27017/autosocial?authSource=admin
     volumes:
-      - ./uploads:/app/uploads
+      # Uploads volume removed - using Cloudinary for image storage
       - ./logs:/app/logs
     depends_on:
       - mongodb
