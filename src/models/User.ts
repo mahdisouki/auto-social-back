@@ -1,5 +1,18 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface FacebookPage {
+  pageId: string;
+  pageName: string;
+  accessToken: string;
+  category: string;
+  connectedAt: Date;
+  instagramAccount?: {
+    accountId: string;
+    username: string;
+    accessToken: string;
+  };
+}
+
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
@@ -11,15 +24,33 @@ export interface IUser extends Document {
     facebook?: string;
     instagram?: string;
     tiktok?: string;
+    facebookPages?: FacebookPage[];
   };
+  metaUserToken?: string; // User's short-lived access token
   createdAt: Date;
   updatedAt: Date;
 }
+
+const InstagramAccountSchema = new Schema({
+  accountId: { type: String, required: true },
+  username: { type: String, required: true },
+  accessToken: { type: String, required: true },
+}, { _id: false });
+
+const FacebookPageSchema = new Schema({
+  pageId: { type: String, required: true, unique: true },
+  pageName: { type: String, required: true },
+  accessToken: { type: String, required: true },
+  category: { type: String },
+  connectedAt: { type: Date, default: Date.now },
+  instagramAccount: { type: InstagramAccountSchema, default: null },
+}, { _id: false });
 
 const ConnectedAccountsSchema = new Schema({
   facebook: { type: String, default: null },
   instagram: { type: String, default: null },
   tiktok: { type: String, default: null },
+  facebookPages: { type: [FacebookPageSchema], default: [] },
 }, { _id: false });
 
 const UserSchema = new Schema<IUser>({
@@ -56,6 +87,10 @@ const UserSchema = new Schema<IUser>({
   connectedAccounts: {
     type: ConnectedAccountsSchema,
     default: {},
+  },
+  metaUserToken: {
+    type: String,
+    default: null,
   },
 }, {
   timestamps: true,

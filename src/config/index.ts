@@ -28,6 +28,11 @@ interface Config {
     webhookUrl: string | undefined;
     apiKey: string | undefined;
   };
+  meta: {
+    appId: string | undefined;
+    appSecret: string | undefined;
+    apiVersion: string;
+  };
   rateLimit: {
     windowMs: number;
     maxRequests: number;
@@ -66,6 +71,11 @@ export const config: Config = {
   n8n: {
     webhookUrl: process.env.N8N_WEBHOOK_URL,
     apiKey: process.env.N8N_API_KEY,
+  },
+  meta: {
+    appId: process.env.META_APP_ID,
+    appSecret: process.env.META_APP_SECRET,
+    apiVersion: process.env.META_API_VERSION || 'v21.0',
   },
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes

@@ -294,8 +294,9 @@ export class PostController {
       }
 
       const { id } = req.params;
+      const { targetPageIds } = req.body; // Optional: specific Facebook pages to post to
 
-      const result = await PostService.publishPost(id, req.user.userId);
+      const result = await PostService.publishPost(id, req.user.userId, targetPageIds);
 
       res.status(200).json({
         success: true,

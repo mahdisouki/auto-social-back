@@ -1,6 +1,8 @@
 import { Post, IPost } from '@/models';
+import { User } from '@/models/User';
 import { AIService } from './aiService';
 import { N8nService } from './n8nService';
+import { MetaService } from './metaService';
 import { JobScheduler } from '@/jobs/scheduler';
 
 export interface CreatePostData {
@@ -93,7 +95,7 @@ export class PostService {
   /**
    * Publish a post immediately
    */
-  static async publishPost(postId: string, userId: string): Promise<IPost> {
+  static async publishPost(postId: string, userId: string, targetPageIds?: string[]): Promise<IPost> {
     try {
       const post = await Post.findOne({ _id: postId, userId });
       if (!post) {
@@ -104,13 +106,114 @@ export class PostService {
         throw new Error('Post has already been published');
       }
 
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const publishedResults: any[] = [];
+      const errors: string[] = [];
+
+      // Check if post targets Facebook or Instagram
+      const hasMetaPlatform = post.platform.some(p => p === 'facebook' || p === 'instagram');
+      
+      if (hasMetaPlatform && user.connectedAccounts.facebookPages?.length) {
+        // Publish via Meta Graph API
+        const pages = targetPageIds 
+          ? user.connectedAccounts.facebookPages.filter(p => targetPageIds.includes(p.pageId))
+          : user.connectedAccounts.facebookPages;
+
+        for (const page of pages) {
+          try {
+            // Determine which platforms to post to for this page
+            const platformsToPost = post.platform.filter(p => {
+              if (p === 'facebook') return true;
+              if (p === 'instagram' && page.instagramAccount) return true;
+              return false;
+            });
+
+            for (const platform of platformsToPost) {
+              if (platform === 'facebook') {
+                // Post to Facebook Page
+                const imageUrl = post.images?.[0] || post.mediaUrl;
+                const result = await MetaService.postToFacebookPage(
+                  page.pageId,
+                  page.accessToken,
+                  post.caption,
+                  imageUrl
+                );
+                
+                publishedResults.push({
+                  platform: 'facebook',
+                  pageId: page.pageId,
+                  pageName: page.pageName,
+                  postId: result.post_id,
+                });
+              } else if (platform === 'instagram' && page.instagramAccount) {
+                // Post to Instagram
+                const imageUrl = post.images?.[0] || post.mediaUrl;
+                if (!imageUrl) {
+                  errors.push(`Instagram post requires an image for page ${page.pageName}`);
+                  continue;
+                }
+
+                const result = await MetaService.postToInstagram(
+                  page.instagramAccount.accountId,
+                  page.accessToken,
+                  imageUrl,
+                  post.caption
+                );
+                
+                publishedResults.push({
+                  platform: 'instagram',
+                  pageId: page.pageId,
+                  pageName: page.pageName,
+                  instagramAccountId: page.instagramAccount.accountId,
+                  instagramUsername: page.instagramAccount.username,
+                  postId: result.id,
+                });
+              }
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            errors.push(`Failed to post to ${page.pageName}: ${errorMsg}`);
+            console.error(`Error posting to page ${page.pageId}:`, error);
+          }
+        }
+
+        // If we have non-Meta platforms, also send to n8n
+        const nonMetaPlatforms = post.platform.filter(p => p !== 'facebook' && p !== 'instagram');
+        if (nonMetaPlatforms.length > 0) {
+          try {
+            // Create a temporary post object with only non-Meta platforms
+            const tempPost = { ...post.toObject(), platform: nonMetaPlatforms };
+            // Cast through unknown to avoid type mismatch (toObject returns plain object, not Mongoose Document)
+            await N8nService.publishPost(tempPost as unknown as IPost);
+          } catch (error) {
+            errors.push(`Failed to publish to other platforms via n8n: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
+      } else {
+        // No Meta platforms or no connected pages - use n8n for all platforms
+        await N8nService.publishPost(post);
+      }
+
       // Update post status
-      post.status = 'posted';
+      if (publishedResults.length > 0 || errors.length === 0) {
+        post.status = 'posted';
+        // Store published results in post metadata if needed
+        (post as any).publishedResults = publishedResults;
+      } else {
+        post.status = 'failed';
+        (post as any).publishedErrors = errors;
+      }
+
       post.scheduledAt = undefined; // Clear scheduled time since it's being published now
       await post.save();
 
-      // Send to n8n for publishing to social platforms
-      await N8nService.publishPost(post);
+      if (errors.length > 0 && publishedResults.length === 0) {
+        throw new Error(`Failed to publish post: ${errors.join('; ')}`);
+      }
 
       return post;
     } catch (error) {

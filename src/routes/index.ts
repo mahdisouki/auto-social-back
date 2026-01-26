@@ -3,6 +3,7 @@ import authRoutes from './auth';
 import postRoutes from './posts';
 import chatRoutes from './chat';
 import uploadRoutes from './upload';
+import metaRoutes from './meta';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/auth', authRoutes);
 router.use('/posts', postRoutes);
 router.use('/chat', chatRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/meta', metaRoutes);
 
 export default router;
