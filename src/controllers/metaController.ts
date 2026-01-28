@@ -24,8 +24,7 @@ export class MetaController {
       
       // Backend callback URL (Facebook will call this)
       const redirectUri = `${config.server.nodeEnv === 'production' 
-        ? process.env.BACKEND_URL || 'https://api.postoryai.com' 
-        : 'http://localhost:3000'}/api/meta/auth/facebook/callback`;
+        ? process.env.BACKEND_URL || 'https://api.postoryai.com':'https://api.postoryai.com'}/api/meta/auth/facebook/callback`;
       
       const authUrl = MetaService.getFacebookAuthUrl(state, redirectUri);
 
@@ -54,16 +53,14 @@ export class MetaController {
 
       if (!code) {
         const frontendUrl = `${config.server.nodeEnv === 'production' 
-          ? process.env.FRONTEND_URL || 'https://postoryai.com' 
-          : 'http://localhost:3000'}/auth/facebook/error`;
+          ? process.env.FRONTEND_URL || 'https://postoryai.com':'https://postoryai.com'}/auth/facebook/error`;
         res.redirect(`${frontendUrl}?error=${encodeURIComponent('Authorization code not provided')}`);
         return;
       }
 
       if (!state) {
         const frontendUrl = `${config.server.nodeEnv === 'production' 
-          ? process.env.FRONTEND_URL || 'https://postoryai.com' 
-          : 'http://localhost:3000'}/auth/facebook/error`;
+          ? process.env.FRONTEND_URL || 'https://postoryai.com':'https://postoryai.com'}/auth/facebook/error`;
         res.redirect(`${frontendUrl}?error=${encodeURIComponent('State parameter missing')}`);
         return;
       }
@@ -72,16 +69,14 @@ export class MetaController {
       const stateUserId = state.toString().split('-')[0];
       if (!stateUserId) {
         const frontendUrl = `${config.server.nodeEnv === 'production' 
-          ? process.env.FRONTEND_URL || 'https://postoryai.com' 
-          : 'http://localhost:3000'}/auth/facebook/error`;
+          ? process.env.FRONTEND_URL || 'https://postoryai.com':'https://postoryai.com'}/auth/facebook/error`;
         res.redirect(`${frontendUrl}?error=${encodeURIComponent('Invalid state parameter')}`);
         return;
       }
 
       // Backend callback URL (must match what was used in initiateFacebookAuth)
       const redirectUri = `${config.server.nodeEnv === 'production' 
-        ? process.env.BACKEND_URL || 'https://api.postoryai.com' 
-        : 'http://localhost:3000'}/api/meta/auth/facebook/callback`;
+        ? process.env.BACKEND_URL || 'https://api.postoryai.com':'https://api.postoryai.com'}/api/meta/auth/facebook/callback`;
 
       // Exchange code for access token
       const shortLivedToken = await MetaService.exchangeCodeForToken(
@@ -97,16 +92,14 @@ export class MetaController {
 
       // Redirect back to frontend with success
       const frontendUrl = `${config.server.nodeEnv === 'production' 
-        ? process.env.FRONTEND_URL || 'https://postoryai.com' 
-        : 'http://localhost:3000'}/auth/facebook/success`;
+        ? process.env.FRONTEND_URL || 'https://postoryai.com':'https://postoryai.com'}/auth/facebook/success`;
 
       res.redirect(`${frontendUrl}?success=true&pages=${pages.length}`);
     } catch (error) {
       console.error('Error handling Facebook callback:', error);
       
       const frontendUrl = `${config.server.nodeEnv === 'production' 
-        ? process.env.FRONTEND_URL || 'https://postoryai.com' 
-        : 'http://localhost:3000'}/auth/facebook/error`;
+        ? process.env.FRONTEND_URL || 'https://postoryai.com':'https://postoryai.com'}/auth/facebook/error`;
 
       res.redirect(`${frontendUrl}?error=${encodeURIComponent(error instanceof Error ? error.message : 'Authentication failed')}`);
     }
