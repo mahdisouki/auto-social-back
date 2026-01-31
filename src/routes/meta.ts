@@ -9,8 +9,8 @@ router.get('/auth/facebook', authenticateToken, MetaController.initiateFacebookA
 router.get('/auth/facebook/callback', MetaController.handleFacebookCallback);
 
 // Page management
-router.get('/pages', MetaController.getConnectedPages);
-router.get('/pages/refresh', MetaController.refreshPages);
-router.delete('/pages/:pageId', MetaController.disconnectPage);
+router.get('/pages',authenticateToken, MetaController.getConnectedPages);
+router.get('/pages/refresh',authenticateToken, MetaController.refreshPages);
+router.delete('/pages/:pageId',authenticateToken, MetaController.disconnectPage);
 
 export default router;
