@@ -89,11 +89,11 @@ export class JobScheduler {
   /**
    * Schedule a post for publishing
    */
-  static async schedulePost(postId: string, scheduledAt: Date): Promise<void> {
+  static async schedulePost(postId: string, scheduledAt: Date, userId: string): Promise<void> {
     try {
       const job = this.agenda.create('publish-post', {
         postId,
-        userId: 'system', // This should be passed from the calling function
+        userId,
       });
 
       await job.schedule(scheduledAt).save();

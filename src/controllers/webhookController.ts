@@ -101,7 +101,7 @@ export class WebhookController {
 
       // If image processing is complete and post is ready, schedule it if needed
       if (status === 'ready' && post.scheduledAt) {
-        await JobScheduler.schedulePost(post._id.toString(), post.scheduledAt);
+        await JobScheduler.schedulePost(post._id.toString(), post.scheduledAt, post.userId.toString());
       }
     } catch (error) {
       console.error('Error handling image processed:', error);

@@ -53,7 +53,7 @@ export class PostService {
 
       // If scheduled, add to job scheduler
       if (data.scheduledAt) {
-        await JobScheduler.schedulePost(post._id.toString(), data.scheduledAt);
+        await JobScheduler.schedulePost(post._id.toString(), data.scheduledAt, data.userId);
       }
 
       return post;
@@ -83,7 +83,7 @@ export class PostService {
       await post.save();
 
       // Add to job scheduler
-      await JobScheduler.schedulePost(postId, scheduledAt);
+      await JobScheduler.schedulePost(postId, scheduledAt, userId);
 
       return post;
     } catch (error) {
