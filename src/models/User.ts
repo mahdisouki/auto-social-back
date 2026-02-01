@@ -27,6 +27,7 @@ export interface IUser extends Document {
     facebookPages?: FacebookPage[];
   };
   metaUserToken?: string; // User's short-lived access token
+  credits: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -91,6 +92,11 @@ const UserSchema = new Schema<IUser>({
   metaUserToken: {
     type: String,
     default: null,
+  },
+  credits: {
+    type: Number,
+    default: 5,
+    min: 0,
   },
 }, {
   timestamps: true,

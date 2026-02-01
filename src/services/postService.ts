@@ -29,6 +29,22 @@ export class PostService {
    */
   static async createPost(data: CreatePostData): Promise<IPost> {
     try {
+      // Check credits before creating (admin bypass)
+      const user = await User.findById(data.userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.role !== 'admin') {
+        // Use default 5 for existing users without credits field (migration)
+        const credits = user.credits === undefined || user.credits === null ? 5 : user.credits;
+        if (credits < 1) {
+          throw new Error('Insufficient credits. You need 1 credit to create a post.');
+        }
+        user.credits = credits - 1;
+        await user.save();
+      }
+
       // Create the post
       const post = new Post({
         userId: data.userId,
