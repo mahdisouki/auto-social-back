@@ -118,6 +118,8 @@ export class PostService {
         throw new Error('Post not found');
       }
 
+      console.log(`📤 [PostService.publishPost] postId=${postId} userId=${userId} status=${post.status}`);
+
       if (post.status === 'posted') {
         throw new Error('Post has already been published');
       }
