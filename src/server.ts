@@ -38,14 +38,14 @@ class AutoSocialServer {
   }
 
   private initializeMiddlewares(): void {
-    // Security middleware
-    this.app.use(helmet());
-    
-    // CORS
+    // CORS first so preflight (OPTIONS) always gets CORS headers
     this.app.use(cors({
       origin: config.server.corsOrigin,
       credentials: true,
     }));
+
+    // Security middleware
+    this.app.use(helmet());
 
     // Rate limiting
     const limiter = rateLimit({
@@ -56,7 +56,7 @@ class AutoSocialServer {
         message: 'Too many requests, please try again later.',
       },
     });
-    this.app.use('/api');
+    this.app.use('/api', limiter);
 
     // Logging
     this.app.use(morgan('combined'));
