@@ -56,7 +56,7 @@ class AutoSocialServer {
         message: 'Too many requests, please try again later.',
       },
     });
-    this.app.use('/api', limiter);
+    this.app.use('/api');
 
     // Logging
     this.app.use(morgan('combined'));
