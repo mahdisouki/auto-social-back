@@ -40,14 +40,23 @@ export class JobScheduler {
     // Schedule post publishing job
     this.agenda.define('publish-post', async (job: any) => {
       const { postId, userId } = job.attrs.data;
-      
+      const now = new Date();
+      const scheduledFor = job.attrs.nextRunAt;
+      console.log(`📅 [publish-post] Job started`, {
+        postId,
+        userId,
+        scheduledFor: scheduledFor?.toISOString?.(),
+        serverTime: now.toISOString(),
+        isPastDue: scheduledFor ? scheduledFor <= now : 'unknown',
+      });
+
       try {
         console.log(`📅 Publishing scheduled post: ${postId}`);
         await PostService.publishPost(postId, userId);
         console.log(`✅ Successfully published post: ${postId}`);
       } catch (error) {
         console.error(`❌ Failed to publish post ${postId}:`, error);
-        
+
         // Update post status to failed
         try {
           const { Post } = await import('@/models');
@@ -55,6 +64,8 @@ export class JobScheduler {
         } catch (updateError) {
           console.error(`❌ Failed to update post status for ${postId}:`, updateError);
         }
+      } finally {
+        console.log(`📅 [publish-post] Job finished for postId=${postId}`);
       }
     });
 
@@ -80,6 +91,17 @@ export class JobScheduler {
       try {
         const jobCount = await this.agenda.jobs({ nextRunAt: { $exists: true } });
         console.log(`💓 Scheduler health check: ${jobCount.length} jobs scheduled`);
+
+        const publishJobs = await this.agenda.jobs({
+          name: 'publish-post',
+          nextRunAt: { $exists: true },
+        });
+        const now = new Date();
+        publishJobs.forEach((j: any) => {
+          const next = j.attrs.nextRunAt;
+          const due = next ? next <= now : false;
+          console.log(`   📅 publish-post ${j.attrs.data?.postId} nextRunAt=${next?.toISOString?.()} due=${due}`);
+        });
       } catch (error) {
         console.error('❌ Health check failed:', error);
       }

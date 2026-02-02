@@ -174,6 +174,7 @@ export class MetaService {
             url: imageUrl,
             message,
             access_token: pageAccessToken,
+            privacy: { value: 'EVERYONE' },
           }
         );
         result = photoResponse.data;
@@ -184,6 +185,7 @@ export class MetaService {
           {
             message,
             access_token: pageAccessToken,
+            privacy: { value: 'EVERYONE' },
           }
         );
         result = feedResponse.data;
