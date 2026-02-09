@@ -62,8 +62,8 @@ const PostSchema = new Schema<IPost>({
   },
   currency: {
     type: String,
-    enum: ['TND', 'USD', 'EUR'],
-    default: 'TND',
+    enum: ['DT', '$', '€'],
+    default: 'DT',
     trim: true,
   },
   price: {
@@ -82,7 +82,7 @@ const PostSchema = new Schema<IPost>({
   },
   backgroundType: {
     type: String,
-    enum: ['white', 'color'],
+    enum: ['white', 'color' ,'scene'],
     trim: true,
   },
   backgroundColor: {
