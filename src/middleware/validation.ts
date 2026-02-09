@@ -92,13 +92,21 @@ export const schemas = {
 
   // Post update
   updatePost: Joi.object({
-    caption: Joi.string().max(2200).optional(),
+    caption: Joi.string().max(2200).optional().allow(''),
     platform: Joi.array().items(
       Joi.string().valid('facebook', 'instagram', 'tiktok', 'twitter')
     ).min(1).optional(),
-    scheduledAt: Joi.date().greater('now').optional().messages({
+    scheduledAt: Joi.date().greater('now').optional().allow(null).messages({
       'date.greater': 'Scheduled date must be in the future'
-    })
+    }),
+    postType: Joi.string().valid(
+      'accessories', 'clothing', 'electronics', 'furniture', 'beauty', 'food',
+      'sports', 'books', 'toys', 'automotive', 'home', 'other'
+    ).optional().allow(''),
+    productName: Joi.string().max(200).optional().allow(''),
+    description: Joi.string().max(1000).optional().allow(''),
+    price: Joi.string().optional().allow(''),
+    currency: Joi.string().valid('TND', 'USD', 'EUR').optional(),
   }),
 
   // Message creation

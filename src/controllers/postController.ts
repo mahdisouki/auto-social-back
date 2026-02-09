@@ -170,7 +170,7 @@ export class PostController {
       }
 
       const { id } = req.params;
-      const updateData = req.body;
+      const updateData = { ...req.body };
 
       // Remove fields that shouldn't be updated directly
       delete updateData.userId;
@@ -180,6 +180,17 @@ export class PostController {
       // Convert scheduledAt to Date if provided
       if (updateData.scheduledAt) {
         updateData.scheduledAt = new Date(updateData.scheduledAt);
+      } else if (updateData.scheduledAt === null) {
+        updateData.$unset = updateData.$unset || {};
+        (updateData.$unset as Record<string, 1>).scheduledAt = 1;
+        delete updateData.scheduledAt;
+      }
+
+      // Empty string for postType means clear it (enum doesn't allow '')
+      if (updateData.postType === '') {
+        delete updateData.postType;
+        updateData.$unset = updateData.$unset || {};
+        (updateData.$unset as Record<string, 1>).postType = 1;
       }
 
       const post = await Post.findOneAndUpdate(
