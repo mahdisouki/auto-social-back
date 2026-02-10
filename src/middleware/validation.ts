@@ -83,7 +83,7 @@ export const schemas = {
     price: Joi.string().optional(),
     productName: Joi.string().optional(),
     description: Joi.string().optional(),
-    backgroundType: Joi.string().valid('white', 'color').optional(),
+    backgroundType: Joi.string().valid('white', 'color', 'scene').optional(),
     backgroundColor: Joi.string().optional(),
     useModel: Joi.string().valid('yes', 'no').optional(),
     modelGender: Joi.string().valid('male', 'female').optional(),

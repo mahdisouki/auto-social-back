@@ -13,7 +13,7 @@ export interface IPost extends Document {
   price?: string; // Product price
   productName?: string; // Product name
   description?: string; // Product description
-  backgroundType?: string; // Background type used (white, color)
+  backgroundType?: string; // Background type used (white, color, scene)
   backgroundColor?: string; // Background color (hex code)
   useModel?: string; // Whether model was used (yes, no)
   modelEthnicity?: string; // Model ethnicity (european, american, arab, asian)
@@ -82,7 +82,7 @@ const PostSchema = new Schema<IPost>({
   },
   backgroundType: {
     type: String,
-    enum: ['white', 'color'],
+    enum: ['white', 'color', 'scene'],
     trim: true,
   },
   backgroundColor: {
