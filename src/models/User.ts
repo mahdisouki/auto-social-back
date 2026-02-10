@@ -39,7 +39,7 @@ const InstagramAccountSchema = new Schema({
 }, { _id: false });
 
 const FacebookPageSchema = new Schema({
-  pageId: { type: String, required: true, unique: true },
+  pageId: { type: String, required: true },
   pageName: { type: String, required: true },
   accessToken: { type: String, required: true },
   category: { type: String },

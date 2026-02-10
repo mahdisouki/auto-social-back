@@ -10,7 +10,7 @@ export interface IPost extends Document {
   platform: string[];
   postType?: string; // Type of post (accessories, clothing, electronics, etc.)
   currency?: string; // Currency code (TND, USD, EUR, etc.)
-  price?: string; // Product price
+  price?: number; // Product price (float)
   productName?: string; // Product name
   description?: string; // Product description
   backgroundType?: string; // Background type used (white, color, scene)
@@ -67,8 +67,7 @@ const PostSchema = new Schema<IPost>({
     trim: true,
   },
   price: {
-    type: String,
-    trim: true,
+    type: Number,
   },
   productName: {
     type: String,

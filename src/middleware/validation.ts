@@ -80,7 +80,7 @@ export const schemas = {
     }),
     postType: Joi.string().optional(),
     currency: Joi.string().optional(),
-    price: Joi.string().optional(),
+    price: Joi.number().integer().positive().optional(),
     productName: Joi.string().optional(),
     description: Joi.string().optional(),
     backgroundType: Joi.string().valid('white', 'color', 'scene').optional(),
@@ -105,7 +105,7 @@ export const schemas = {
     ).optional().allow(''),
     productName: Joi.string().max(200).optional().allow(''),
     description: Joi.string().max(1000).optional().allow(''),
-    price: Joi.string().optional().allow(''),
+    price: Joi.number().integer().positive().optional().allow(''),
     currency: Joi.string().valid('TND', 'USD', 'EUR').optional(),
   }),
 
