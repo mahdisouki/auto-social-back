@@ -81,12 +81,13 @@ export class PostController {
         return;
       }
 
-      const { page = 1, limit = 10, status, platform } = req.query;
+      const { page = 1, limit = 10, status, platform, createdAt } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
 
       const filter: any = { userId: req.user.userId };
       if (status) filter.status = status;
       if (platform) filter.platform = platform;
+      if (createdAt) filter.createdAt = { $gte: new Date(createdAt as string) };
 
       const posts = await Post.find(filter)
         .sort({ createdAt: -1 })

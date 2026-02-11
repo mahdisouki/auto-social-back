@@ -19,9 +19,5 @@ router.delete('/:id', PostController.deletePost);
 router.post('/:id/schedule', PostController.schedulePost);
 router.post('/:id/publish', PostController.publishPost);
 
-// AI Caption generation endpoints
-router.post('/generate-caption', PostController.generateAICaption);
-router.post('/generate-tunisian-caption', PostController.generateTunisianCaption);
-router.post('/generate-multiple-captions', PostController.generateMultipleCaptions);
 
 export default router;
