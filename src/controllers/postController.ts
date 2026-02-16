@@ -2,6 +2,10 @@ import { Request, Response } from 'express';
 import { Post, IPost } from '@/models';
 import { PostService } from '@/services/postService';
 import { AIService } from '@/services/aiService';
+import { cloudinary } from '@/config/cloudinary';
+import { config } from '@/config';
+import axios from 'axios';
+import FormData from 'form-data';
 
 export class PostController {
   /**
@@ -324,139 +328,139 @@ export class PostController {
   }
 
   /**
-   * Generate AI caption with Pollinations API
+   * Generate post with AI and create it (calls Python AI service)
    */
-  static async generateAICaption(req: Request, res: Response): Promise<void> {
+  static async generateAndCreatePost(req: Request, res: Response): Promise<void> {
     try {
-      const { 
-        prompt, 
-        platform = 'instagram',
-        language = 'english',
-        tone = 'friendly',
-        audience = 'general',
-        length = 'medium',
-        count = 1
-      } = req.body;
-
-      if (!prompt) {
-        res.status(400).json({
+      if (!req.user) {
+        res.status(401).json({
           success: false,
-          message: 'Prompt is required',
+          message: 'Authentication required',
         });
         return;
       }
 
-      const caption = await AIService.generateCaption(prompt, platform, {
-        language,
-        tone,
-        audience,
-        length,
-        count
-      });
-
-      res.json({
-        success: true,
-        data: {
-          caption,
-          prompt,
-          platform,
-          options: { language, tone, audience, length, count }
-        },
-      });
-    } catch (error) {
-      console.error('Error generating AI caption:', error);
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to generate caption',
-      });
-    }
-  }
-
-  /**
-   * Generate Tunisian dialect caption
-   */
-  static async generateTunisianCaption(req: Request, res: Response): Promise<void> {
-    try {
-      const { 
-        prompt, 
-        platform = 'facebook',
-        tone = 'friendly',
-        audience = 'general'
+      const {
+        imageBase64, // Original product image (base64)
+        platform,
+        scheduledAt,
+        postType,
+        currency,
+        price,
+        productName,
+        description,
+        backgroundType,
+        backgroundColor,
+        sceneId,
+        useModel,
+        modelType,
+        modelEthnicity,
+        modelGender,
+        customModelImage, // base64 image for custom model
+        sceneReference, // base64 image for scene reference
+        addText,
+        addPrice,
+        generateCaption,
+        captionLanguage,
       } = req.body;
 
-      if (!prompt) {
+      // Validate required fields
+      if (!imageBase64) {
         res.status(400).json({
           success: false,
-          message: 'Prompt is required',
+          message: 'Product image (imageBase64) is required',
         });
         return;
       }
 
-      const caption = await AIService.generateTunisianCaption(prompt, platform, tone, audience);
-
-      res.json({
-        success: true,
-        data: {
-          caption,
-          prompt,
-          platform,
-          language: 'tunisian',
-          tone,
-          audience
-        },
-      });
-    } catch (error) {
-      console.error('Error generating Tunisian caption:', error);
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to generate Tunisian caption',
-      });
-    }
-  }
-
-  /**
-   * Generate multiple caption options
-   */
-  static async generateMultipleCaptions(req: Request, res: Response): Promise<void> {
-    try {
-      const { 
-        prompt, 
-        platform = 'instagram',
-        count = 3,
-        language = 'english',
-        tone = 'friendly',
-        audience = 'general'
-      } = req.body;
-
-      if (!prompt) {
+      if (!platform || !Array.isArray(platform) || platform.length === 0) {
         res.status(400).json({
           success: false,
-          message: 'Prompt is required',
+          message: 'At least one platform is required',
         });
         return;
       }
 
-      const captions = await AIService.generateMultipleCaptions(prompt, platform, count, {
-        language,
-        tone,
-        audience
-      });
+      // Prepare form data for Python AI service
+      console.log('🤖 Calling Python AI service at:', config.pythonAi.url);
+      
+      const formData = new FormData();
+      
+      // Convert base64 to buffer and add as file
+      const imageBuffer = Buffer.from(imageBase64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+      formData.append('file', imageBuffer, { filename: 'product.jpg', contentType: 'image/jpeg' });
+      
+      // Add all parameters
+      formData.append('background_type', backgroundType || 'white');
+      formData.append('background_color', backgroundColor || '#ffffff');
+      formData.append('scene_id', sceneId || '');
+      formData.append('use_model', useModel || 'no');
+      formData.append('model_type', modelType || 'ai');
+      formData.append('model_ethnicity', modelEthnicity || '');
+      formData.append('model_gender', modelGender || '');
+      formData.append('add_text', addText || 'no');
+      formData.append('add_price', addPrice || 'no');
+      formData.append('price', price || '');
+      formData.append('currency', currency || 'DT');
+      formData.append('generate_caption', generateCaption || 'yes');
+      formData.append('caption_language', captionLanguage || 'french');
+      formData.append('post_type', postType || 'other');
+      
+      // Add custom model image if provided
+      if (customModelImage) {
+        const customModelBuffer = Buffer.from(customModelImage.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+        formData.append('custom_model_image', customModelBuffer, { filename: 'model.jpg', contentType: 'image/jpeg' });
+      }
+      
+      // Add scene reference image if provided
+      if (sceneReference) {
+        const sceneRefBuffer = Buffer.from(sceneReference.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+        formData.append('scene_reference', sceneRefBuffer, { filename: 'scene.jpg', contentType: 'image/jpeg' });
+      }
 
-      res.json({
-        success: true,
-        data: {
-          captions,
-          prompt,
-          platform,
-          count: captions.length,
-          options: { language, tone, audience }
-        },
-      });
+      try {
+        // Call Python AI service
+        const aiResponse = await axios.post(
+          `${config.pythonAi.url}/edit-product`,
+          formData,
+          {
+            headers: formData.getHeaders(),
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            timeout: 300000, // 5 minute timeout for AI generation
+          }
+        );
+
+        const { image: generatedImageBase64, caption, language } = aiResponse.data;
+        
+        console.log('✅ AI service responded successfully');
+        console.log('📝 Generated caption:', caption?.substring(0, 100) || 'N/A');
+
+        // Return the AI-generated image and caption to frontend
+        // Frontend will handle upload to Cloudinary and post creation
+        res.status(200).json({
+          success: true,
+          message: 'Image generated successfully',
+          data: {
+            image: generatedImageBase64,
+            caption: caption || '',
+            language: language || captionLanguage,
+          },
+        });
+      } catch (aiError: any) {
+        console.error('❌ Python AI service error:', aiError.response?.data || aiError.message);
+        res.status(500).json({
+          success: false,
+          message: 'Failed to generate image with AI service',
+          error: aiError.response?.data?.detail || aiError.message,
+        });
+        return;
+      }
     } catch (error) {
-      console.error('Error generating multiple captions:', error);
-      res.status(500).json({
+      console.error('❌ Error in generateAndCreatePost:', error);
+      res.status(400).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to generate captions',
+        message: error instanceof Error ? error.message : 'Failed to generate post',
       });
     }
   }

@@ -10,6 +10,7 @@ router.use(authenticateToken);
 
 // Post CRUD operations
 router.post('/', validate(schemas.createPost), PostController.createPost);
+router.post('/generate', validate(schemas.generatePost), PostController.generateAndCreatePost); // Generate with Python AI and create
 router.get('/', PostController.getUserPosts);
 router.get('/:id', PostController.getPost);
 router.put('/:id', validate(schemas.updatePost), PostController.updatePost);

@@ -33,6 +33,9 @@ interface Config {
     appSecret: string | undefined;
     apiVersion: string;
   };
+  pythonAi: {
+    url: string;
+  };
   rateLimit: {
     windowMs: number;
     maxRequests: number;
@@ -79,6 +82,9 @@ export const config: Config = {
     appId: process.env.META_APP_ID,
     appSecret: process.env.META_APP_SECRET,
     apiVersion: process.env.META_API_VERSION || 'v21.0',
+  },
+  pythonAi: {
+    url: process.env.PYTHON_AI_URL || 'http://localhost:8000',
   },
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes

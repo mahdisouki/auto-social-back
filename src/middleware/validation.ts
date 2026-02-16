@@ -90,6 +90,43 @@ export const schemas = {
     addText: Joi.string().valid('yes', 'no').optional()
   }),
 
+  // Generate post with AI (calls Python AI service)
+  generatePost: Joi.object({
+    imageBase64: Joi.string().required().messages({
+      'any.required': 'Product image (base64) is required'
+    }),
+    platform: Joi.array().items(
+      Joi.string().valid('facebook', 'instagram', 'tiktok', 'twitter')
+    ).min(1).required().messages({
+      'array.min': 'At least one platform must be selected',
+      'any.required': 'Platform selection is required'
+    }),
+    scheduledAt: Joi.date().greater('now').optional().messages({
+      'date.greater': 'Scheduled date must be in the future'
+    }),
+    postType: Joi.string().valid(
+      'accessories', 'clothing', 'electronics', 'furniture', 'beauty', 'food',
+      'sports', 'books', 'toys', 'automotive', 'home', 'other'
+    ).optional(),
+    currency: Joi.string().valid('DT', '$', '€').optional(),
+    price: Joi.string().optional(),
+    productName: Joi.string().max(200).optional(),
+    description: Joi.string().max(1000).optional(),
+    backgroundType: Joi.string().valid('white', 'color', 'scene').optional(),
+    backgroundColor: Joi.string().optional(),
+    sceneId: Joi.string().optional(),
+    useModel: Joi.string().valid('yes', 'no').optional(),
+    modelType: Joi.string().valid('ai', 'custom').optional(),
+    modelEthnicity: Joi.string().valid('european', 'american', 'arab', 'asian').optional(),
+    modelGender: Joi.string().valid('male', 'female').optional(),
+    customModelImage: Joi.string().optional(), // base64 image
+    sceneReference: Joi.string().optional(), // base64 image
+    addText: Joi.string().valid('yes', 'no').optional(),
+    addPrice: Joi.string().valid('yes', 'no').optional(),
+    generateCaption: Joi.string().valid('yes', 'no').optional(),
+    captionLanguage: Joi.string().valid('french', 'arabic').optional()
+  }),
+
   // Post update
   updatePost: Joi.object({
     caption: Joi.string().max(2200).optional().allow(''),
