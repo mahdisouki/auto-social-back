@@ -342,16 +342,11 @@ export class PostController {
 
       const {
         imageBase64, // Original product image (base64)
-        platform,
-        scheduledAt,
         postType,
         currency,
         price,
-        productName,
-        description,
         backgroundType,
         backgroundColor,
-        sceneId,
         useModel,
         modelType,
         modelEthnicity,
@@ -373,14 +368,6 @@ export class PostController {
         return;
       }
 
-      if (!platform || !Array.isArray(platform) || platform.length === 0) {
-        res.status(400).json({
-          success: false,
-          message: 'At least one platform is required',
-        });
-        return;
-      }
-
       // Prepare form data for Python AI service
       console.log('🤖 Calling Python AI service at:', config.pythonAi.url);
       
@@ -393,7 +380,6 @@ export class PostController {
       // Add all parameters
       formData.append('background_type', backgroundType || 'white');
       formData.append('background_color', backgroundColor || '#ffffff');
-      formData.append('scene_id', sceneId || '');
       formData.append('use_model', useModel || 'no');
       formData.append('model_type', modelType || 'ai');
       formData.append('model_ethnicity', modelEthnicity || '');
