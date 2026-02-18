@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Post, IPost } from '@/models';
+import { User } from '@/models/User';
 import { PostService } from '@/services/postService';
 import { AIService } from '@/services/aiService';
 import { cloudinary } from '@/config/cloudinary';
@@ -368,6 +369,27 @@ export class PostController {
         return;
       }
 
+      // Check credits for generation (1 credit per 3 images; admins bypass)
+      const user = await User.findById(req.user!.userId);
+      if (!user) {
+        res.status(404).json({ success: false, message: 'User not found' });
+        return;
+      }
+
+      if (user.role !== 'admin') {
+        const generationCount = user.generationCount ?? 0;
+        const credits = user.credits ?? 5;
+
+        // On 3rd generation we deduct 1 credit - ensure user has at least 1
+        if (generationCount === 2 && credits < 1) {
+          res.status(400).json({
+            success: false,
+            message: 'Insufficient credits. You need 1 credit for every 3 image generations.',
+          });
+          return;
+        }
+      }
+
       // Prepare form data for Python AI service
       console.log('🤖 Calling Python AI service at:', config.pythonAi.url);
       
@@ -421,6 +443,18 @@ export class PostController {
         
         console.log('✅ AI service responded successfully');
         console.log('📝 Generated caption:', caption?.substring(0, 100) || 'N/A');
+
+        // Deduct 1 credit every 3 generations (admins bypass)
+        if (user.role !== 'admin') {
+          const newCount = (user.generationCount ?? 0) + 1;
+          if (newCount >= 3) {
+            user.credits = Math.max(0, (user.credits ?? 5) - 1);
+            user.generationCount = 0;
+          } else {
+            user.generationCount = newCount;
+          }
+          await user.save();
+        }
 
         // Return the AI-generated image and caption to frontend
         // Frontend will handle upload to Cloudinary and post creation

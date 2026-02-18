@@ -28,6 +28,7 @@ export interface IUser extends Document {
   };
   metaUserToken?: string; // User's short-lived access token
   credits: number;
+  generationCount: number; // Counts AI image generations; every 3 = 1 credit deducted
   createdAt: Date;
   updatedAt: Date;
 }
@@ -96,6 +97,11 @@ const UserSchema = new Schema<IUser>({
   credits: {
     type: Number,
     default: 5,
+    min: 0,
+  },
+  generationCount: {
+    type: Number,
+    default: 0,
     min: 0,
   },
 }, {
