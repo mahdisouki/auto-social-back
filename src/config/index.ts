@@ -84,7 +84,7 @@ export const config: Config = {
     apiVersion: process.env.META_API_VERSION || 'v21.0',
   },
   pythonAi: {
-    url: process.env.PYTHON_AI_URL || 'http://localhost:8000',
+    url: process.env.PYTHON_AI_URL || 'https://ai.postoryai.com',
   },
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
