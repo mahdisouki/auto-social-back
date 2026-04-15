@@ -1,6 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 
+const timezoneAwareIsoDate = Joi.string()
+  .isoDate()
+  .pattern(/(Z|[+-]\d{2}:\d{2})$/)
+  .custom((value, helpers) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return helpers.error('date.format');
+    }
+    if (parsed <= new Date()) {
+      return helpers.error('date.greater');
+    }
+    return value;
+  })
+  .messages({
+    'string.isoDate': 'scheduledAt must be a valid ISO-8601 datetime',
+    'string.pattern.base': 'scheduledAt must include timezone (Z or ±HH:MM)',
+    'date.greater': 'Scheduled date must be in the future',
+    'date.format': 'scheduledAt must be a valid datetime',
+  });
+
 /**
  * Validation middleware factory
  * Creates middleware that validates request data against a Joi schema
@@ -72,9 +92,7 @@ export const schemas = {
       'array.min': 'At least one platform must be selected',
       'any.required': 'Platform selection is required'
     }),
-    scheduledAt: Joi.date().greater('now').optional().messages({
-      'date.greater': 'Scheduled date must be in the future'
-    }),
+    scheduledAt: timezoneAwareIsoDate.optional(),
     images: Joi.array().items(Joi.string()).max(5).optional().messages({
       'array.max': 'Maximum 5 images allowed'
     }),
@@ -121,9 +139,7 @@ export const schemas = {
     platform: Joi.array().items(
       Joi.string().valid('facebook', 'instagram', 'tiktok', 'twitter')
     ).min(1).optional(),
-    scheduledAt: Joi.date().greater('now').optional().allow(null).messages({
-      'date.greater': 'Scheduled date must be in the future'
-    }),
+    scheduledAt: timezoneAwareIsoDate.optional().allow(null),
     postType: Joi.string().valid(
       'accessories', 'clothing', 'electronics', 'furniture', 'beauty', 'food',
       'sports', 'books', 'toys', 'automotive', 'home', 'other'
@@ -176,5 +192,12 @@ export const schemas = {
   objectId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
     'string.pattern.base': 'Invalid ID format',
     'any.required': 'ID is required'
-  })
+  }),
+
+  // Schedule post endpoint body
+  schedulePost: Joi.object({
+    scheduledAt: timezoneAwareIsoDate.required().messages({
+      'any.required': 'scheduledAt is required',
+    }),
+  }),
 };

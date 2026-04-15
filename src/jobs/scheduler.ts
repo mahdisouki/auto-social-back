@@ -90,17 +90,20 @@ export class JobScheduler {
     this.agenda.define('health-check', async () => {
       try {
         const jobCount = await this.agenda.jobs({ nextRunAt: { $exists: true } });
-        console.log(`💓 Scheduler health check: ${jobCount.length} jobs scheduled`);
+        const now = new Date();
+        console.log(`💓 Scheduler health check: ${jobCount.length} jobs scheduled (serverTime=${now.toISOString()})`);
 
         const publishJobs = await this.agenda.jobs({
           name: 'publish-post',
           nextRunAt: { $exists: true },
         });
-        const now = new Date();
         publishJobs.forEach((j: any) => {
           const next = j.attrs.nextRunAt;
           const due = next ? next <= now : false;
-          console.log(`   📅 publish-post ${j.attrs.data?.postId} nextRunAt=${next?.toISOString?.()} due=${due}`);
+          const msUntilRun = next ? next.getTime() - now.getTime() : null;
+          console.log(
+            `   📅 publish-post ${j.attrs.data?.postId} nextRunAt=${next?.toISOString?.()} due=${due} msUntilRun=${msUntilRun}`
+          );
         });
       } catch (error) {
         console.error('❌ Health check failed:', error);

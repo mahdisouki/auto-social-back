@@ -17,7 +17,7 @@ router.put('/:id', validate(schemas.updatePost), PostController.updatePost);
 router.delete('/:id', PostController.deletePost);
 
 // Post scheduling and publishing
-router.post('/:id/schedule', PostController.schedulePost);
+router.post('/:id/schedule', validate(schemas.schedulePost), PostController.schedulePost);
 router.post('/:id/publish', PostController.publishPost);
 
 

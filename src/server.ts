@@ -38,6 +38,10 @@ class AutoSocialServer {
   }
 
   private initializeMiddlewares(): void {
+    // Required behind reverse proxies so client IP is resolved correctly
+    // for rate-limit and other middleware that rely on request IP.
+    this.app.set('trust proxy', 1);
+
     // CORS first so preflight (OPTIONS) always gets CORS headers
     this.app.use(cors({
       origin: config.server.corsOrigin,
