@@ -19,6 +19,7 @@ router.delete('/:id', PostController.deletePost);
 // Post scheduling and publishing
 router.post('/:id/schedule', validate(schemas.schedulePost), PostController.schedulePost);
 router.post('/:id/publish', PostController.publishPost);
+router.get('/:id/engagement', PostController.getPostEngagement);
 
 
 export default router;

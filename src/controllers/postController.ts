@@ -329,6 +329,54 @@ export class PostController {
   }
 
   /**
+   * Get post engagement, optionally syncing from Meta API
+   */
+  static async getPostEngagement(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        });
+        return;
+      }
+
+      const { id } = req.params;
+      const shouldSync = req.query.sync !== 'false';
+
+      const post = shouldSync
+        ? await PostService.syncPostEngagement(id, req.user.userId)
+        : await Post.findOne({ _id: id, userId: req.user.userId });
+
+      if (!post) {
+        res.status(404).json({
+          success: false,
+          message: 'Post not found',
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          postId: post._id,
+          engagement: post.engagement || {
+            likesCount: 0,
+            commentsCount: 0,
+            lastSyncedAt: null,
+          },
+          platformPosts: post.platformPosts || [],
+        },
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to get post engagement',
+      });
+    }
+  }
+
+  /**
    * Generate post with AI and create it (calls Python AI service)
    */
   static async generateAndCreatePost(req: Request, res: Response): Promise<void> {

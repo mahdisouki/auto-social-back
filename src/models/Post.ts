@@ -21,6 +21,22 @@ export interface IPost extends Document {
   addText?: string; // Whether text was added to image (yes, no)
   scheduledAt?: Date;
   status: 'draft' | 'scheduled' | 'posted' | 'failed';
+  platformPosts?: {
+    platform: 'facebook' | 'instagram';
+    pageId: string;
+    pageName?: string;
+    externalPostId: string;
+    instagramAccountId?: string;
+    instagramUsername?: string;
+    publishedAt: Date;
+  }[];
+  engagement?: {
+    likesCount: number;
+    commentsCount: number;
+    lastSyncedAt?: Date;
+  };
+  publishedResults?: Array<Record<string, unknown>>;
+  publishedErrors?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -121,6 +137,62 @@ const PostSchema = new Schema<IPost>({
     type: String,
     enum: ['draft', 'scheduled', 'posted', 'failed'],
     default: 'draft',
+  },
+  platformPosts: [{
+    platform: {
+      type: String,
+      enum: ['facebook', 'instagram'],
+      required: true,
+    },
+    pageId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    pageName: {
+      type: String,
+      trim: true,
+    },
+    externalPostId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    instagramAccountId: {
+      type: String,
+      trim: true,
+    },
+    instagramUsername: {
+      type: String,
+      trim: true,
+    },
+    publishedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  }],
+  engagement: {
+    likesCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    commentsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastSyncedAt: {
+      type: Date,
+    },
+  },
+  publishedResults: {
+    type: [Schema.Types.Mixed],
+    default: [],
+  },
+  publishedErrors: {
+    type: [String],
+    default: [],
   },
 }, {
   timestamps: true,

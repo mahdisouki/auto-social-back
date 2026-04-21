@@ -130,6 +130,7 @@ export class PostService {
       }
 
       const publishedResults: any[] = [];
+      const platformPosts: IPost['platformPosts'] = [];
       const errors: string[] = [];
 
       // Check if post targets Facebook or Instagram
@@ -167,6 +168,13 @@ export class PostService {
                   pageName: page.pageName,
                   postId: result.post_id,
                 });
+                platformPosts?.push({
+                  platform: 'facebook',
+                  pageId: page.pageId,
+                  pageName: page.pageName,
+                  externalPostId: result.post_id,
+                  publishedAt: new Date(),
+                });
               } else if (platform === 'instagram' && page.instagramAccount) {
                 // Post to Instagram
                 const imageUrl = post.images?.[0] || post.mediaUrl;
@@ -189,6 +197,15 @@ export class PostService {
                   instagramAccountId: page.instagramAccount.accountId,
                   instagramUsername: page.instagramAccount.username,
                   postId: result.id,
+                });
+                platformPosts?.push({
+                  platform: 'instagram',
+                  pageId: page.pageId,
+                  pageName: page.pageName,
+                  externalPostId: result.id,
+                  instagramAccountId: page.instagramAccount.accountId,
+                  instagramUsername: page.instagramAccount.username,
+                  publishedAt: new Date(),
                 });
               }
             }
@@ -219,11 +236,11 @@ export class PostService {
       // Update post status
       if (publishedResults.length > 0 || errors.length === 0) {
         post.status = 'posted';
-        // Store published results in post metadata if needed
-        (post as any).publishedResults = publishedResults;
+        post.publishedResults = publishedResults;
+        post.platformPosts = platformPosts || [];
       } else {
         post.status = 'failed';
-        (post as any).publishedErrors = errors;
+        post.publishedErrors = errors;
       }
 
       post.scheduledAt = undefined; // Clear scheduled time since it's being published now
@@ -356,5 +373,92 @@ export class PostService {
       console.error('Error getting ready to publish posts:', error);
       throw new Error('Failed to get ready to publish posts');
     }
+  }
+
+  /**
+   * Sync Facebook engagement metrics for a published post
+   */
+  static async syncPostEngagement(postId: string, userId: string): Promise<IPost> {
+    const post = await Post.findOne({ _id: postId, userId });
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    const facebookPlatformPost = post.platformPosts?.find(p => p.platform === 'facebook');
+    if (!facebookPlatformPost) {
+      throw new Error('No published Facebook post found for this post');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const connectedPage = user.connectedAccounts.facebookPages?.find(
+      page => page.pageId === facebookPlatformPost.pageId
+    );
+    if (!connectedPage?.accessToken) {
+      throw new Error('Connected Facebook page token not found');
+    }
+
+    const engagement = await MetaService.getFacebookPostEngagement(
+      facebookPlatformPost.externalPostId,
+      connectedPage.accessToken
+    );
+
+    post.engagement = {
+      likesCount: engagement.likesCount,
+      commentsCount: engagement.commentsCount,
+      lastSyncedAt: new Date(),
+    };
+
+    await post.save();
+    return post;
+  }
+
+  /**
+   * Sync engagement for recently published Facebook posts in batches
+   */
+  static async syncRecentFacebookEngagements(): Promise<{
+    scanned: number;
+    synced: number;
+    failed: number;
+  }> {
+    const maxPostsPerRun = 25;
+    const resyncIntervalMs = 30 * 60 * 1000; // 30 minutes
+
+    const now = new Date();
+    const resyncBefore = new Date(now.getTime() - resyncIntervalMs);
+
+    const candidates = await Post.find({
+      status: 'posted',
+      'platformPosts.platform': 'facebook',
+      $or: [
+        { 'engagement.lastSyncedAt': { $exists: false } },
+        { 'engagement.lastSyncedAt': null },
+        { 'engagement.lastSyncedAt': { $lt: resyncBefore } },
+      ],
+    })
+      .sort({ updatedAt: -1 })
+      .limit(maxPostsPerRun)
+      .select('_id userId');
+
+    let synced = 0;
+    let failed = 0;
+
+    for (const post of candidates) {
+      try {
+        await this.syncPostEngagement(post._id.toString(), post.userId.toString());
+        synced += 1;
+      } catch (error) {
+        failed += 1;
+      }
+    }
+
+    return {
+      scanned: candidates.length,
+      synced,
+      failed,
+    };
   }
 }

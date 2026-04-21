@@ -109,6 +109,18 @@ export class JobScheduler {
         console.error('❌ Health check failed:', error);
       }
     });
+
+    // Sync post engagement metrics
+    this.agenda.define('sync-post-engagement', async () => {
+      try {
+        const result = await PostService.syncRecentFacebookEngagements();
+        console.log(
+          `🔄 Engagement sync completed: scanned=${result.scanned} synced=${result.synced} failed=${result.failed}`
+        );
+      } catch (error) {
+        console.error('❌ Engagement sync failed:', error);
+      }
+    });
   }
 
   /**
@@ -189,6 +201,18 @@ export class JobScheduler {
       console.log('📅 Scheduled health check job');
     } catch (error) {
       console.error('❌ Failed to schedule health check job:', error);
+    }
+  }
+
+  /**
+   * Schedule recurring engagement sync
+   */
+  static async scheduleEngagementSync(): Promise<void> {
+    try {
+      await this.agenda.every('30 minutes', 'sync-post-engagement');
+      console.log('📅 Scheduled engagement sync job');
+    } catch (error) {
+      console.error('❌ Failed to schedule engagement sync job:', error);
     }
   }
 

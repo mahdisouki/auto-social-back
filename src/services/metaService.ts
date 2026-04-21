@@ -21,6 +21,11 @@ interface InstagramAccountData {
   username: string;
 }
 
+interface FacebookPostEngagementResponse {
+  likes?: { summary?: { total_count?: number } };
+  comments?: { summary?: { total_count?: number } };
+}
+
 export class MetaService {
   private static readonly GRAPH_API_BASE = 'https://graph.facebook.com';
 
@@ -238,6 +243,34 @@ export class MetaService {
     } catch (error: any) {
       console.error('Error posting to Instagram:', error.response?.data || error.message);
       throw new Error(`Failed to post to Instagram: ${error.response?.data?.error?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Get Facebook post engagement counts
+   */
+  static async getFacebookPostEngagement(
+    postId: string,
+    pageAccessToken: string
+  ): Promise<{ likesCount: number; commentsCount: number }> {
+    try {
+      const response: AxiosResponse<FacebookPostEngagementResponse> = await axios.get(
+        `${this.GRAPH_API_BASE}/${config.meta.apiVersion}/${postId}`,
+        {
+          params: {
+            access_token: pageAccessToken,
+            fields: 'likes.summary(true).limit(0),comments.summary(true).limit(0)',
+          },
+        }
+      );
+
+      return {
+        likesCount: response.data.likes?.summary?.total_count || 0,
+        commentsCount: response.data.comments?.summary?.total_count || 0,
+      };
+    } catch (error: any) {
+      console.error('Error fetching Facebook post engagement:', error.response?.data || error.message);
+      throw new Error(`Failed to fetch Facebook post engagement: ${error.response?.data?.error?.message || error.message}`);
     }
   }
 

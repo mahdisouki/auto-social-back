@@ -151,6 +151,7 @@ class AutoSocialServer {
       await JobScheduler.initialize();
       await JobScheduler.scheduleCleanup();
       await JobScheduler.scheduleHealthCheck();
+      await JobScheduler.scheduleEngagementSync();
 
       // Start server
       this.server.listen(config.server.port, () => {
