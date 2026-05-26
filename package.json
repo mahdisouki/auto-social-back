@@ -4,7 +4,8 @@
   "description": "AI-powered social media automation SaaS backend",
   "main": "dist/server.js",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "npm run build && node dist/server.js",
+    "start:dist": "node dist/server.js",
     "dev": "nodemon -r tsconfig-paths/register src/server.ts",
     "build": "tsc && tsc-alias",
     "test": "jest"
