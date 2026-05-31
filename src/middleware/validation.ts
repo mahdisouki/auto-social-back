@@ -27,9 +27,10 @@ const timezoneAwareIsoDate = Joi.string()
  */
 export const validate = (schema: Joi.ObjectSchema, property: 'body' | 'query' | 'params' = 'body') => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const { error, value } = schema.validate(req[property], { 
+    const { error, value } = schema.validate(req[property], {
       abortEarly: false,
-      stripUnknown: true 
+      stripUnknown: true,
+      ...(property === 'query' ? { convert: true } : {}),
     });
 
     if (error) {
@@ -200,4 +201,48 @@ export const schemas = {
       'any.required': 'scheduledAt is required',
     }),
   }),
+
+  adminUsersQuery: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    search: Joi.string().trim().max(100).optional().allow(''),
+    role: Joi.string().valid('admin', 'user').optional(),
+    plan: Joi.string().valid('free', 'pro').optional(),
+  }),
+
+  adminPostsQuery: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    userId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+    status: Joi.string().valid('draft', 'scheduled', 'posted', 'failed').optional(),
+    platform: Joi.string().valid('facebook', 'instagram', 'tiktok', 'twitter').optional(),
+    createdAt: Joi.string().isoDate().optional(),
+  }),
+
+  adminUserParams: Joi.object({
+    userId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
+      'string.pattern.base': 'Invalid user ID format',
+      'any.required': 'User ID is required',
+    }),
+  }),
+
+  adminPostParams: Joi.object({
+    id: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
+      'string.pattern.base': 'Invalid post ID format',
+      'any.required': 'Post ID is required',
+    }),
+  }),
+
+  adminUpdateUser: Joi.object({
+    name: Joi.string().min(2).max(50).optional(),
+    email: Joi.string().email().optional(),
+    role: Joi.string().valid('admin', 'user').optional(),
+    plan: Joi.string().valid('free', 'pro').optional(),
+    credits: Joi.number().integer().min(0).optional(),
+    generationCount: Joi.number().integer().min(0).optional(),
+  })
+    .or('name', 'email', 'role', 'plan', 'credits', 'generationCount')
+    .messages({
+      'object.missing': 'At least one field must be provided to update',
+    }),
 };

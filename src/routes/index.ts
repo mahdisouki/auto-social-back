@@ -4,6 +4,7 @@ import postRoutes from './posts';
 import chatRoutes from './chat';
 import uploadRoutes from './upload';
 import metaRoutes from './meta';
+import adminRoutes from './admin';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/posts', postRoutes);
 router.use('/chat', chatRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/meta', metaRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;
