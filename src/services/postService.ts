@@ -24,6 +24,9 @@ export interface CreatePostData {
 }
 
 export class PostService {
+  private static addOneHour(date: Date): Date {
+    return new Date(date.getTime() + 60 * 60 * 1000);
+  }
   /**
    * Create a new post with AI-generated content
    */
@@ -46,11 +49,13 @@ export class PostService {
       }
 
       // Create the post
+      const shiftedScheduledAt = data.scheduledAt ? this.addOneHour(data.scheduledAt) : undefined;
+
       const post = new Post({
         userId: data.userId,
         caption: data.caption,
         platform: data.platform,
-        scheduledAt: data.scheduledAt,
+        scheduledAt: shiftedScheduledAt,
         images: data.images || [],
         status: data.scheduledAt ? 'scheduled' : 'draft',
         postType: data.postType,
@@ -68,8 +73,8 @@ export class PostService {
       await post.save();
 
       // If scheduled, add to job scheduler
-      if (data.scheduledAt) {
-        await JobScheduler.schedulePost(post._id.toString(), data.scheduledAt, data.userId);
+      if (shiftedScheduledAt) {
+        await JobScheduler.schedulePost(post._id.toString(), shiftedScheduledAt, data.userId);
       }
 
       return post;
@@ -93,13 +98,15 @@ export class PostService {
         throw new Error('Scheduled date must be in the future');
       }
 
+      const shiftedScheduledAt = this.addOneHour(scheduledAt);
+
       // Update post status and scheduled time
-      post.scheduledAt = scheduledAt;
+      post.scheduledAt = shiftedScheduledAt;
       post.status = 'scheduled';
       await post.save();
 
       // Add to job scheduler
-      await JobScheduler.schedulePost(postId, scheduledAt, userId);
+      await JobScheduler.schedulePost(postId, shiftedScheduledAt, userId);
 
       return post;
     } catch (error) {

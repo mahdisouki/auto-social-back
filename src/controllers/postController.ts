@@ -9,6 +9,9 @@ import axios from 'axios';
 import FormData from 'form-data';
 
 export class PostController {
+  private static addOneHour(date: Date): Date {
+    return new Date(date.getTime() + 60 * 60 * 1000);
+  }
   /**
    * Create a new post
    */
@@ -185,7 +188,7 @@ export class PostController {
 
       // Convert scheduledAt to Date if provided
       if (updateData.scheduledAt) {
-        updateData.scheduledAt = new Date(updateData.scheduledAt);
+        updateData.scheduledAt = PostController.addOneHour(new Date(updateData.scheduledAt));
       } else if (updateData.scheduledAt === null) {
         updateData.$unset = updateData.$unset || {};
         (updateData.$unset as Record<string, 1>).scheduledAt = 1;

@@ -17,6 +17,9 @@ import { JobScheduler } from '@/jobs/scheduler';
 import apiRoutes from '@/routes';
 import webhookRoutes from '@/routes/webhooks';
 
+// Force a single server timezone across the API runtime.
+process.env.TZ = process.env.TZ || 'Africa/Tunis';
+
 class AutoSocialServer {
   private app: express.Application;
   private server: any;
