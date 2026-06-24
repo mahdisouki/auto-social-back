@@ -468,4 +468,78 @@ export class PostService {
       failed,
     };
   }
+
+  /**
+   * Get engagement (likes/comments) for all of a user's published posts.
+   * When shouldSync is true, refreshes Facebook metrics before returning.
+   */
+  static async getAllPostsEngagement(
+    userId: string,
+    shouldSync = false
+  ): Promise<{
+    totals: {
+      postsCount: number;
+      likesCount: number;
+      commentsCount: number;
+    };
+    sync?: {
+      synced: number;
+      failed: number;
+    };
+  }> {
+    const posts = await Post.find({
+      userId,
+      status: 'posted',
+    })
+      .sort({ createdAt: -1 })
+      .select('engagement platformPosts');
+
+    let synced = 0;
+    let failed = 0;
+
+    if (shouldSync) {
+      for (const post of posts) {
+        const hasFacebookPost = post.platformPosts?.some(p => p.platform === 'facebook');
+        if (!hasFacebookPost) continue;
+
+        try {
+          await this.syncPostEngagement(post._id.toString(), userId);
+          synced += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+
+      // Reload posts after sync so engagement fields are fresh
+      const refreshed = await Post.find({
+        userId,
+        status: 'posted',
+      })
+        .sort({ createdAt: -1 })
+        .select('engagement');
+
+      return this.buildEngagementSummary(refreshed, shouldSync ? { synced, failed } : undefined);
+    }
+
+    return this.buildEngagementSummary(posts);
+  }
+
+  private static buildEngagementSummary(
+    posts: IPost[],
+    syncStats?: { synced: number; failed: number }
+  ) {
+    const totals = posts.reduce(
+      (acc, post) => ({
+        postsCount: acc.postsCount + 1,
+        likesCount: acc.likesCount + (post.engagement?.likesCount ?? 0),
+        commentsCount: acc.commentsCount + (post.engagement?.commentsCount ?? 0),
+      }),
+      { postsCount: 0, likesCount: 0, commentsCount: 0 }
+    );
+
+    return {
+      totals,
+      ...(syncStats ? { sync: syncStats } : {}),
+    };
+  }
 }

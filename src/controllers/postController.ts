@@ -332,6 +332,34 @@ export class PostController {
   }
 
   /**
+   * Get engagement for all published posts (cached; use ?sync=true to refresh from Meta)
+   */
+  static async getAllPostsEngagement(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        });
+        return;
+      }
+
+      const shouldSync = req.query.sync === 'true';
+      const data = await PostService.getAllPostsEngagement(req.user.userId, shouldSync);
+
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to get posts engagement',
+      });
+    }
+  }
+
+  /**
    * Get post engagement, optionally syncing from Meta API
    */
   static async getPostEngagement(req: Request, res: Response): Promise<void> {
